@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import UserProfile from '../components/UserProfile';
 import { Loader2 } from 'lucide-react';
+import MenuEditor from '../components/MenuEditor'; // 1. Import the new component
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [messData, setmessData] = useState(null);
   const [token] = useState("3e7c711e9c4fdfc83af97b89a20f214e3b4eeb9a1aa6e28245880e05efac582a");
-  const [deliveryAddressType, setDeliveryAddressType] = useState('home');
-  const [selectedMess, setSelectedMess] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
+
+  // 2. Add state to control which view is shown
+  const [isEditingMenu, setIsEditingMenu] = useState(false);
+
   useEffect(() => {
     if (token) {
       fetchUserInfo(token);
@@ -18,17 +20,32 @@ const Index = () => {
 
   const fetchUserInfo = async (token) => {
     try {
-      const response = await fetch(`https://script.google.com/macros/s/AKfycbwGJkHJyDe5OnovzSxvszswA65M_LvmuWf4uZ90hxcW1dxrogp2AHYw2Tto8qvLvSnrSA/exec?mode=getmessandmessownerdeatils&&token=${token}`);
+      const response = await fetch(`https://script.google.com/macros/s/AKfycbzVXT0nW_pqr90SO4syo728zACiwmd-CyaHngbkM4gigbkgTjkSomR_tnyp8t33qKBXgQ/exec?mode=getmessandmessownerdeatils&&token=${token}`);
       const data = await response.json();
       const messData = data.messes;
+      console.log("rr", messData);
       setmessData(messData);
       setLoading(false);
-      // fetchAvailableMesses(messData);
     } catch (error) {
       alert("Failed to fetch user info. Please refresh.");
       setLoading(false);
     }
   };
+
+  // 3. If editing, render the MenuEditor component
+  if (isEditingMenu) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+
+        <Header messDeatils={messData} />
+        <MenuEditor
+          messId={messData.messID}
+          token={token}
+          onBack={() => setIsEditingMenu(false)} // Pass a function to go back
+        />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -40,16 +57,36 @@ const Index = () => {
       </div>
     );
   }
+  console.log("rrrrrreeeeeeeeee",messData)
   return (
     <div className="min-h-screen bg-gray-50">
       <Header messDeatils={messData} />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <UserProfile
-          messDeatils={messData}
-        />
-      </div>
+        <UserProfile messDeatils={messData} />
 
+        {messData && messData.messActive ? (
+          <div className="mt-4 flex space-x-4" style={{ justifyContent: 'center' }}>
+            <button
+              className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-gray-700"
+              // 4. Update onClick to change state instead of opening a new tab
+              onClick={() => setIsEditingMenu(true)}
+            >
+              Change Menu
+            </button>
+            <button
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-gray-400"
+              onClick={() => { alert("Change Menu") }}
+            >
+              View orders
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 flex space-x-4" style={{ justifyContent: 'center' }}>
+            Your Profie is blocked by Tiffindia
+          </div>
+        )}
+      </div>
     </div>
   );
 };
