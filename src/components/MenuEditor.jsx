@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader2, ArrowLeft, Edit, XCircle, CheckCircle } from 'lucide-react';
+import Popup from './Popup'; // Adjust the path if needed
+
 
 // A helper function to format the date string for display
 const formatDate = (dateString) => {
@@ -16,8 +18,7 @@ const formatDateForApi = (dateString) => {
     const date = new Date(dateString);
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate() + 1).padStart(2, '0');
-    console.log("ppppppppppp",`${year}-${month}-${day}`)
+    const day = String(date.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
 
@@ -29,16 +30,21 @@ const MenuEditor = ({ messId, token, onBack }) => {
     const [originalMenus, setOriginalMenus] = useState([]);
     // State to track the saving status of a specific menu item
     const [isSaving, setIsSaving] = useState(null);
+    const [popupMessage, setPopupMessage] = useState('');
+    const [isPopupVisible, setPopupVisible] = useState(false);
 
     useEffect(() => {
         fetchMenus();
     }, [messId, token]);
-
+    const showPopup = (message) => {
+        setPopupMessage(message);
+        setPopupVisible(true);
+    };
     const fetchMenus = async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`https://script.google.com/macros/s/AKfycbzTSLGdfpK_G2Z6vefVzYbx5o0heXzTno9xxu69weC1WESivuvWmmJbqEe9X8sDwC5qng/exec?mode=getdailymenuformessowners&&messId=${messId}`);
+            const response = await fetch(`https://script.google.com/macros/s/AKfycbwj-Lzx0r4ZLxrRKBJlProwmlAv_mjoREb-DuQqn3kR6TSLqRXMeeEAY2diL3t-75mfMA/exec?mode=getdailymenuformessowners&&messId=${messId}`);
             const data = await response.json();
             if (data.success) {
                 setMenus(data.menus);
@@ -48,7 +54,7 @@ const MenuEditor = ({ messId, token, onBack }) => {
             }
         } catch (err) {
             setError(err.message);
-            alert('Failed to load menus. Please try again.');
+            showPopup('Failed to load menus. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -68,11 +74,11 @@ const MenuEditor = ({ messId, token, onBack }) => {
             offeringDate: formatDateForApi(menuItem.offeringDate),
             mealType: menuItem.mealType,
             menuContents: menuItem.menuContents,
-            status: menuItem.status || "Available", // Add status, defaulting to "Available"
+            status: "Available", // Add status, defaulting to "Available"
         };
 
         try {
-            const response = await fetch('https://script.google.com/macros/s/AKfycbwQ6YKqKwylaY4bUDskjLHbXM7xw3N26uqdHh52ZZv3Q1a2p74oZDvBbp5cYqJcXAfTWA/exec?mode=updatedailymenucontent', {
+            const response = await fetch('https://script.google.com/macros/s/AKfycbwj-Lzx0r4ZLxrRKBJlProwmlAv_mjoREb-DuQqn3kR6TSLqRXMeeEAY2diL3t-75mfMA/exec?mode=updatedailymenucontent', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain;charset=utf-8', // Google Apps Script often expects text/plain
@@ -83,7 +89,7 @@ const MenuEditor = ({ messId, token, onBack }) => {
             const result = await response.json();
 
             if (result.success) {
-                alert('Menu updated successfully!');
+                showPopup('Menu updated successfully!');
                 setEditingMenuId(null);
                 // Update the original data copy to reflect the saved state
                 setOriginalMenus(JSON.parse(JSON.stringify(menus)));
@@ -91,7 +97,7 @@ const MenuEditor = ({ messId, token, onBack }) => {
                 throw new Error(result.message || 'An unknown error occurred while saving.');
             }
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            showPopup(err.message || 'An error occurred.');
             handleCancelEdit(); // Revert changes on failure
         } finally {
             setIsSaving(null); // Reset saving state
@@ -135,14 +141,16 @@ const MenuEditor = ({ messId, token, onBack }) => {
             </button>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Edit Daily Menu</h1>
+            {isPopupVisible && (
+                <Popup message={popupMessage} setPopupVisible={() => setPopupVisible(false)} />
+            )}
 
             <div className="space-y-4">
                 {menus.map((menu, index) => {
                     const isEditing = menu.menuID === editingMenuId;
                     const isCurrentlySaving = isSaving === menu.menuID;
-
                     return (
-                        <div key={menu.menuID} className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+                        <div key={menu.menuID + menu.mealType + formatDate(menu.offeringDate)} className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                                 <div className="space-y-1">
                                     <p className="font-bold text-gray-700">{formatDate(menu.offeringDate)}</p>

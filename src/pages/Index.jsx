@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import UserProfile from '../components/UserProfile';
 import { Loader2 } from 'lucide-react';
 import MenuEditor from '../components/MenuEditor'; // 1. Import the new component
+import ViewOrders from '../components/ViewOrders';
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
@@ -11,6 +12,7 @@ const Index = () => {
 
   // 2. Add state to control which view is shown
   const [isEditingMenu, setIsEditingMenu] = useState(false);
+  const [isViewMenu, setIsViewMenu] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -34,6 +36,8 @@ const Index = () => {
 
   // 3. If editing, render the MenuEditor component
   if (isEditingMenu) {
+    if (!messData || !messData.messID) return <div>Error loading mess data.</div>;
+
     return (
       <div className="min-h-screen bg-gray-50">
 
@@ -42,6 +46,19 @@ const Index = () => {
           messId={messData.messID}
           token={token}
           onBack={() => setIsEditingMenu(false)} // Pass a function to go back
+        />
+      </div>
+    );
+  }
+  if (isViewMenu) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+
+        <Header messDeatils={messData} />
+        <ViewOrders
+          messId={messData.messID}
+          token={token}
+          onBack={() => setIsViewMenu(false)} // Pass a function to go back
         />
       </div>
     );
@@ -76,7 +93,7 @@ const Index = () => {
             </button>
             <button
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-gray-400"
-              onClick={() => { alert("Change Menu") }}
+              onClick={() => setIsViewMenu(true)}
             >
               View orders
             </button>
